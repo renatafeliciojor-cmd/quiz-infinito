@@ -4,6 +4,7 @@ import fastifyCors from '@fastify/cors';
 import fastifyHelmet from '@fastify/helmet';
 import logger from '@/utils/logger';
 import { env } from '@/config/env';
+import { authRoutes } from '@/routes/auth.routes';
 
 export async function createApp() {
   const app = Fastify({
@@ -48,6 +49,9 @@ export async function createApp() {
       timestamp: new Date().toISOString(),
     };
   });
+
+  // Routes
+  await app.register(authRoutes);
 
   return app;
 }
