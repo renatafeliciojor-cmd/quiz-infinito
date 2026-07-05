@@ -1,0 +1,633 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= EMPRESA =============
+model Empresa {
+  id                String   @id @default(cuid())
+  nome              String
+  cnpj              String?  @unique
+  email             String?
+  telefone          String?
+  endereco          String?
+  latitude          Decimal? @db.Decimal(10, 8)
+  longitude         Decimal? @db.Decimal(11, 8)
+  logoUrl           String?
+  planoSubscription String   @default("BASIC")
+  limiteUsuarios    Int      @default(5)
+  ativo             Boolean  @default(true)
+  criadoEm          DateTime @default(now())
+  atualizadoEm      DateTime @updatedAt
+
+  usuarios              Usuario[]
+  clientes              Cliente[]
+  produtos              Produto[]
+  estoques              Estoque[]
+  pedidos                Pedido[]
+  rotas                 Rota[]
+  faturas               Fatura[]
+  recebimentos          Recebimento[]
+  campanhas             CampanhaMarketing[]
+  movimentacoesEstoque  MovimentacaoEstoque[]
+  devolucoes            Devolucao[]
+  mensagensWhatsapp     MensagemWhatsapp[]
+  enviosComunicacao     EnvioComunicacao[]
+  relatorios            Relatorio[]
+  auditLogs             AuditLog[]
+
+  @@index([cnpj])
+}
+
+// ============= USUÁRIOS =============
+enum CargoUsuario {
+  ADMIN
+  GERENTE
+  VENDEDOR
+  ENTREGADOR
+  CLIENTE
+}
+
+model Usuario {
+  id            String         @id @default(cuid())
+  empresaId     String
+  empresa       Empresa        @relation(fields: [empresaId], references: [id])
+  email         String         @unique
+  nome          String
+  senhaHash     String
+  telefone      String?
+  cargo         CargoUsuario
+  ativo         Boolean        @default(true)
+  ultimoAcesso  DateTime?
+  fotoUrl       String?
+  criadoEm      DateTime       @default(now())
+  atualizadoEm  DateTime       @updatedAt
+  deletadoEm    DateTime?
+
+  pedidosCriados      Pedido[]     @relation("CriacaoPedido")
+  pedidosEntrega      Pedido[]     @relation("EntregaPedido")
+  rotas               Rota[]
+  rotasParadas        RotaParada[]
+  enviosComunicacao   EnvioComunicacao[]
+  auditLogs           AuditLog[]
+  mensagensWhatsapp   MensagemWhatsapp[]
+  relatorios          Relatorio[]
+
+  @@index([empresaId])
+  @@index([email])
+}
+
+// ============= CLIENTES =============
+enum TipoCliente {
+  PESSOA_FISICA
+  PESSOA_JURIDICA
+}
+
+enum StatusCliente {
+  PROSPECTO
+  ATIVO
+  INATIVO
+  SUSPENSO
+}
+
+model Cliente {
+  id                  String         @id @default(cuid())
+  empresaId           String
+  empresa             Empresa        @relation(fields: [empresaId], references: [id])
+  nomeRazaoSocial     String
+  tipo                TipoCliente
+  cpfCnpj             String         @unique
+  email               String?
+  telefone            String?
+  whatsapp            String?
+  endereco            String?
+  numero              String?
+  complemento         String?
+  bairro              String?
+  cidade              String?
+  estado              String?
+  cep                 String?
+  latitude            Decimal?       @db.Decimal(10, 8)
+  longitude           Decimal?       @db.Decimal(11, 8)
+  status              StatusCliente  @default(PROSPECTO)
+  categoria           String?
+  limiteCredito       Decimal?       @db.Decimal(12, 2)
+  diasPagamento       Int            @default(30)
+  observacoes         String?
+  totalPedidos        Int            @default(0)
+  valorTotalFaturado  Decimal        @default(0) @db.Decimal(15, 2)
+  ultimaCompraData    DateTime?
+  frequenciaMediaDias Int?
+  aceitaMarketing     Boolean        @default(true)
+  aceitaWhatsapp      Boolean        @default(true)
+  criadoEm            DateTime       @default(now())
+  atualizadoEm        DateTime       @updatedAt
+  deletadoEm          DateTime?
+
+  pedidos              Pedido[]
+  rotasParadas         RotaParada[]
+  faturas              Fatura[]
+  devolucoes           Devolucao[]
+  mensagensWhatsapp    MensagemWhatsapp[]
+  enviosComunicacao    EnvioComunicacao[]
+
+  @@index([empresaId])
+  @@index([cpfCnpj])
+  @@index([status])
+}
+
+// ============= PRODUTOS E ESTOQUE =============
+model Produto {
+  id               String   @id @default(cuid())
+  empresaId        String
+  empresa          Empresa  @relation(fields: [empresaId], references: [id])
+  nome             String
+  sku              String   @unique
+  descricao        String?
+  categoria        String?
+  precoCusto       Decimal? @db.Decimal(10, 2)
+  precoVenda       Decimal  @db.Decimal(10, 2)
+  unidadeMedida    String?  @default("L")
+  pesoKg           Decimal? @db.Decimal(10, 3)
+  imagemUrl        String?
+  ativo            Boolean  @default(true)
+  criadoEm         DateTime @default(now())
+  atualizadoEm     DateTime @updatedAt
+
+  estoques         Estoque[]
+  pedidoItens      PedidoItem[]
+
+  @@index([empresaId])
+  @@index([sku])
+}
+
+model Estoque {
+  id                     String   @id @default(cuid())
+  empresaId              String
+  empresa                Empresa  @relation(fields: [empresaId], references: [id])
+  produtoId              String
+  produto                Produto  @relation(fields: [produtoId], references: [id])
+  localArmazenamento     String   @default("DEPOSITO_PRINCIPAL")
+  quantidade             Int      @default(0)
+  quantidadeMinima       Int      @default(10)
+  quantidadeMaxima       Int      @default(100)
+  ultimoRebanhoEstoque   DateTime @default(now())
+  criadoEm               DateTime @default(now())
+  atualizadoEm           DateTime @updatedAt
+
+  movimentacoes         MovimentacaoEstoque[]
+
+  @@unique([empresaId, produtoId, localArmazenamento])
+  @@index([empresaId])
+  @@index([produtoId])
+}
+
+enum TipoMovimentacao {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
+
+model MovimentacaoEstoque {
+  id            String             @id @default(cuid())
+  empresaId     String
+  empresa       Empresa            @relation(fields: [empresaId], references: [id])
+  estoqueId     String
+  estoque       Estoque            @relation(fields: [estoqueId], references: [id])
+  tipo          TipoMovimentacao
+  quantidade    Int
+  motivo        String?
+  referenciaId  String?
+  usuarioId     String?
+  usuario       Usuario?           @relation(fields: [usuarioId], references: [id])
+  observacoes   String?
+  criadoEm      DateTime           @default(now())
+
+  @@index([empresaId])
+  @@index([estoqueId])
+}
+
+// ============= PEDIDOS =============
+enum StatusPedido {
+  RASCUNHO
+  CONFIRMADO
+  PREPARANDO
+  AGUARDANDO_ENTREGA
+  ENTREGUE
+  CANCELADO
+}
+
+enum PrioridadePedido {
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+model Pedido {
+  id                    String           @id @default(cuid())
+  empresaId             String
+  empresa               Empresa          @relation(fields: [empresaId], references: [id])
+  clienteId             String
+  cliente               Cliente          @relation(fields: [clienteId], references: [id])
+  numeroPedido          String           @unique
+  dataPedido            DateTime         @default(now())
+  dataPrevistaEntrega   DateTime?
+  dataEntregaEfetiva    DateTime?
+  status                StatusPedido     @default(RASCUNHO)
+  prioridade            PrioridadePedido @default(NORMAL)
+  valorSubtotal         Decimal?         @db.Decimal(12, 2)
+  descontoPercentual    Decimal          @default(0) @db.Decimal(5, 2)
+  descontoValor         Decimal          @default(0) @db.Decimal(10, 2)
+  freteValor            Decimal          @default(0) @db.Decimal(10, 2)
+  valorTotal            Decimal?         @db.Decimal(12, 2)
+  enderecoEntrega       String?
+  numeroEndereco        String?
+  complemento           String?
+  instrucoesEntrega     String?
+  assinanteEntrega      String?
+  observacoes           String?
+  usuarioCriacaoId      String
+  usuarioCriacao        Usuario          @relation("CriacaoPedido", fields: [usuarioCriacaoId], references: [id])
+  usuarioEntregaId      String?
+  usuarioEntrega        Usuario?         @relation("EntregaPedido", fields: [usuarioEntregaId], references: [id])
+  criadoEm              DateTime         @default(now())
+  atualizadoEm          DateTime         @updatedAt
+
+  itens                Pedido Item[]
+  rotasParadas         RotaParada[]
+  faturas              Fatura[]
+  devolucoes           Devolucao[]
+  enviosComunicacao    EnvioComunicacao[]
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@index([status])
+}
+
+model PedidoItem {
+  id            String  @id @default(cuid())
+  pedidoId      String
+  pedido        Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId     String
+  produto       Produto @relation(fields: [produtoId], references: [id])
+  quantidade    Int
+  precoUnitario Decimal @db.Decimal(10, 2)
+  descontoItem  Decimal @default(0) @db.Decimal(10, 2)
+  subtotal      Decimal @db.Decimal(12, 2)
+  criadoEm      DateTime @default(now())
+
+  @@index([pedidoId])
+  @@index([produtoId])
+}
+
+// ============= ROTAS E ENTREGA =============
+enum StatusRota {
+  PLANEJAMENTO
+  EM_EXECUCAO
+  CONCLUIDA
+  CANCELADA
+}
+
+model Rota {
+  id                   String     @id @default(cuid())
+  empresaId            String
+  empresa              Empresa    @relation(fields: [empresaId], references: [id])
+  numeroRota           String?
+  dataRota             DateTime
+  entregadorId         String
+  entregador           Usuario    @relation(fields: [entregadorId], references: [id])
+  status               StatusRota @default(PLANEJAMENTO)
+  localizacaoAtualLat  Decimal?   @db.Decimal(10, 8)
+  localizacaoAtualLng  Decimal?   @db.Decimal(11, 8)
+  ultimaAtualizacao    DateTime?
+  kmPrevisto           Decimal?   @db.Decimal(8, 2)
+  kmRealizado          Decimal?   @db.Decimal(8, 2)
+  tempoPrevistoMinutos Int?
+  tempoRealizadoMinutos Int?
+  tempoSaida           DateTime?
+  tempoRetorno         DateTime?
+  observacoes          String?
+  criadoEm             DateTime   @default(now())
+  atualizadoEm         DateTime   @updatedAt
+
+  paradas              RotaParada[]
+
+  @@index([empresaId])
+  @@index([entregadorId])
+  @@index([dataRota])
+}
+
+enum StatusParada {
+  PENDENTE
+  VISITADO
+  ENTREGUE
+  DEVOLVIDO
+  NAO_ENCONTRADO
+}
+
+model RotaParada {
+  id                 String      @id @default(cuid())
+  rotaId             String
+  rota               Rota        @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  pedidoId           String
+  pedido             Pedido      @relation(fields: [pedidoId], references: [id])
+  clienteId          String
+  cliente            Cliente     @relation(fields: [clienteId], references: [id])
+  sequencia          Int?
+  status             StatusParada @default(PENDENTE)
+  latitude           Decimal?    @db.Decimal(10, 8)
+  longitude          Decimal?    @db.Decimal(11, 8)
+  horaChegada        DateTime?
+  horaSaida          DateTime?
+  tempoParadaMinutos Int?
+  assinnanteNome     String?
+  assinanteDocumento String?
+  fotoAssinaturaUrl  String?
+  observacoes        String?
+  usuarioId          String
+  usuario            Usuario     @relation(fields: [usuarioId], references: [id])
+  criadoEm           DateTime    @default(now())
+  atualizadoEm       DateTime    @updatedAt
+
+  devolucoes         Devolucao[]
+
+  @@index([rotaId])
+  @@index([pedidoId])
+}
+
+// ============= DEVOLUÇÕES =============
+enum MotivoNotaEntrega {
+  PRODUTO_VENCIDO
+  QUALIDADE
+  QUEBRADO
+  NAO_ENTREGA
+  ERRO_PEDIDO
+  OUTRO
+}
+
+enum StatusDevolucao {
+  DEVOLVIDO
+  EM_PROCESSAMENTO
+  CREDITADO
+  DESCARTADO
+}
+
+model Devolucao {
+  id            String          @id @default(cuid())
+  empresaId     String
+  empresa       Empresa         @relation(fields: [empresaId], references: [id])
+  pedidoId      String
+  pedido        Pedido          @relation(fields: [pedidoId], references: [id])
+  clienteId     String
+  cliente       Cliente         @relation(fields: [clienteId], references: [id])
+  rotaParadaId  String?
+  rotaParada    RotaParada?     @relation(fields: [rotaParadaId], references: [id])
+  dataDevolucao DateTime        @default(now())
+  motivo        MotivoNotaEntrega
+  descricao     String?
+  status        StatusDevolucao @default(DEVOLVIDO)
+  valorCredito  Decimal?        @db.Decimal(10, 2)
+  criadoEm      DateTime        @default(now())
+  atualizadoEm  DateTime        @updatedAt
+
+  @@index([empresaId])
+  @@index([pedidoId])
+}
+
+// ============= FATURAS E RECEBIMENTOS =============
+enum StatusFatura {
+  EMITIDA
+  ENVIADA
+  PARCIAL
+  PAGA
+  VENCIDA
+  CANCELADA
+}
+
+model Fatura {
+  id            String       @id @default(cuid())
+  empresaId     String
+  empresa       Empresa      @relation(fields: [empresaId], references: [id])
+  clienteId     String
+  cliente       Cliente      @relation(fields: [clienteId], references: [id])
+  pedidoId      String?
+  pedido        Pedido?      @relation(fields: [pedidoId], references: [id])
+  numeroNF      String?
+  serieNF       String?
+  dataEmissao   DateTime
+  dataVencimento DateTime
+  valorTotal    Decimal      @db.Decimal(12, 2)
+  valorPago     Decimal      @default(0) @db.Decimal(12, 2)
+  valorJuros    Decimal      @default(0) @db.Decimal(10, 2)
+  valorMulta    Decimal      @default(0) @db.Decimal(10, 2)
+  status        StatusFatura @default(EMITIDA)
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  recebimentos  Recebimento[]
+
+  @@index([empresaId])
+  @@index([clienteId])
+  @@index([status])
+}
+
+enum MetodoPagamento {
+  PIX
+  BOLETO
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  TRANSFERENCIA
+  DINHEIRO
+}
+
+model Recebimento {
+  id               String            @id @default(cuid())
+  empresaId        String
+  empresa          Empresa           @relation(fields: [empresaId], references: [id])
+  faturaId         String
+  fatura           Fatura            @relation(fields: [faturaId], references: [id])
+  clienteId        String
+  cliente          Cliente           @relation(fields: [clienteId], references: [id])
+  dataPagamento    DateTime
+  valorPago        Decimal           @db.Decimal(12, 2)
+  metodoPagamento  MetodoPagamento
+  referenciaBanco  String?
+  numeroComprovante String?
+  observacoes      String?
+  usuarioId        String?
+  usuario          Usuario?          @relation(fields: [usuarioId], references: [id])
+  criadoEm         DateTime          @default(now())
+
+  @@index([empresaId])
+  @@index([faturaId])
+}
+
+// ============= MARKETING E COMUNICAÇÕES =============
+enum TipoCampanha {
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+enum StatusCampanha {
+  RASCUNHO
+  AGENDADA
+  EM_EXECUCAO
+  CONCLUIDA
+  CANCELADA
+}
+
+enum StatusEnvioComunicacao {
+  PENDENTE
+  ENVIADO
+  ENTREGUE
+  LIDO
+  ERRO
+}
+
+enum TipoComunicacao {
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+model CampanhaMarketing {
+  id               String          @id @default(cuid())
+  empresaId        String
+  empresa          Empresa         @relation(fields: [empresaId], references: [id])
+  nome             String
+  descricao        String?
+  tipo             TipoCampanha
+  status           StatusCampanha  @default(RASCUNHO)
+  dataInicio       DateTime?
+  dataFim          DateTime?
+  publico_alvo_status String?
+  publico_alvo_categoria String?
+  assuntoTitulo    String
+  corpoConteudo    String
+  imagemUrl        String?
+  urlBotaoCTA      String?
+  totalDestinatarios Int @default(0)
+  totalEnviados    Int @default(0)
+  totalAbertos     Int @default(0)
+  totalClicados    Int @default(0)
+  usuarioCriacaoId String
+  usuarioCriacao   Usuario         @relation(fields: [usuarioCriacaoId], references: [id])
+  criadoEm         DateTime        @default(now())
+  atualizadoEm     DateTime        @updatedAt
+
+  envios           EnvioComunicacao[]
+
+  @@index([empresaId])
+}
+
+model EnvioComunicacao {
+  id                   String                  @id @default(cuid())
+  empresaId            String
+  empresa              Empresa                 @relation(fields: [empresaId], references: [id])
+  campanhaId           String?
+  campanha             CampanhaMarketing?      @relation(fields: [campanhaId], references: [id])
+  destinatarioTipo     String
+  destinatarioId       String?
+  destinatarioNome     String?
+  destinatarioEmail    String?
+  destinatarioTelefone String?
+  tipo                 TipoComunicacao
+  assunto              String?
+  mensagem             String
+  status               StatusEnvioComunicacao  @default(PENDENTE)
+  erroMensagem         String?
+  dataEnvio            DateTime?
+  dataLeitura          DateTime?
+  usuarioId            String?
+  usuario              Usuario?                @relation(fields: [usuarioId], references: [id])
+  criadoEm             DateTime                @default(now())
+
+  @@index([empresaId])
+  @@index([campanhaId])
+}
+
+enum TipoMensagem {
+  TEXTO
+  IMAGEM
+  ARQUIVO
+  LOCALIZACAO
+}
+
+enum DirecaoMensagem {
+  ENTRADA
+  SAIDA
+}
+
+model MensagemWhatsapp {
+  id                String           @id @default(cuid())
+  empresaId         String
+  empresa           Empresa          @relation(fields: [empresaId], references: [id])
+  clienteId         String?
+  cliente           Cliente?         @relation(fields: [clienteId], references: [id])
+  usuarioId         String?
+  usuario           Usuario?         @relation(fields: [usuarioId], references: [id])
+  numeroWhatsapp    String
+  direcao           DirecaoMensagem
+  tipoMensagem      TipoMensagem
+  conteudo          String?
+  arquivoUrl        String?
+  timestampWhatsapp String?
+  lida              Boolean          @default(false)
+  respondida        Boolean          @default(false)
+  criadoEm          DateTime         @default(now())
+
+  @@index([empresaId])
+  @@index([clienteId])
+}
+
+// ============= RELATÓRIOS =============
+enum TipoRelatorio {
+  VENDAS
+  FINANCEIRO
+  ESTOQUE
+  ENTREGADOR
+  CLIENTE
+  FATURAMENTO
+}
+
+model Relatorio {
+  id            String        @id @default(cuid())
+  empresaId     String
+  empresa       Empresa       @relation(fields: [empresaId], references: [id])
+  tipo          TipoRelatorio
+  periodoInicio DateTime?
+  periodoFim    DateTime?
+  dadosJson     Json?
+  usuarioId     String?
+  usuario       Usuario?      @relation(fields: [usuarioId], references: [id])
+  dataGeracao   DateTime      @default(now())
+  favorito      Boolean       @default(false)
+
+  @@index([empresaId])
+}
+
+// ============= AUDITORIA =============
+model AuditLog {
+  id          String   @id @default(cuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id])
+  usuarioId   String?
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id])
+  entidade    String
+  entidadeId  String?
+  acao        String
+  dadosAntigos Json?
+  dadosNovos  Json?
+  enderecoIP  String?
+  userAgent   String?
+  criadoEm    DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([entidade])
+}

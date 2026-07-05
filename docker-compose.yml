@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: leve-chopp-postgres
+    environment:
+      POSTGRES_USER: leve_chopp
+      POSTGRES_PASSWORD: leve_chopp_dev
+      POSTGRES_DB: leve_chopp
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U leve_chopp']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - leve-chopp-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: leve-chopp-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - leve-chopp-network
+
+  # pgAdmin (Database Admin)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: leve-chopp-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@levechopp.com.br
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+    networks:
+      - leve-chopp-network
+
+  # MailHog (Mock SMTP for development)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: leve-chopp-mailhog
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    networks:
+      - leve-chopp-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  leve-chopp-network:
+    driver: bridge

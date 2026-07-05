@@ -1,0 +1,29 @@
+{
+  "name": "leve-chopp",
+  "version": "0.1.0",
+  "description": "Sistema de gestão de distribuição de chopp em Belo Horizonte",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:push": "cd services/api && npx prisma db push",
+    "db:migrate": "cd services/api && npx prisma migrate dev",
+    "db:studio": "cd services/api && npx prisma studio"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "turbo": "^1.10.0",
+    "typescript": "^5.2.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ]
+}
