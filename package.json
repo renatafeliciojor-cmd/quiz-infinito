@@ -1,0 +1,23 @@
+{
+  "name": "leve-chopp",
+  "version": "0.1.0",
+  "description": "Sistema de gestão de distribuição de chopp em Belo Horizonte",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=@leve-chopp/api\" \"npm run dev --workspace=@leve-chopp/web\"",
+    "build": "npm run build --workspace=@leve-chopp/api && npm run build --workspace=@leve-chopp/web",
+    "test": "echo 'Tests disabled for MVP'",
+    "lint": "echo 'Linting disabled for MVP'",
+    "db:push": "cd services/api && npx prisma db push",
+    "db:migrate": "cd services/api && npx prisma migrate dev",
+    "db:studio": "cd services/api && npx prisma studio"
+  },
+  "devDependencies": {
+    "concurrently": "8.2.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ]
+}

@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// EMPRESA
+model Empresa {
+  id       String   @id @default(cuid())
+  nome     String
+  cnpj     String?  @unique
+  email    String?
+  telefone String?
+
+  usuarios Usuario[]
+  clientes Cliente[]
+
+  @@index([cnpj])
+}
+
+// USUÁRIOS
+model Usuario {
+  id         String   @id @default(cuid())
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id])
+  email      String   @unique
+  nome       String
+  senhaHash  String
+  telefone   String?
+  cargo      String   @default("ADMIN") // ADMIN, GERENTE, VENDEDOR, ENTREGADOR, CLIENTE
+  ativo      Boolean  @default(true)
+  criadoEm   DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([empresaId])
+  @@index([email])
+}
+
+// CLIENTES
+model Cliente {
+  id              String   @id @default(cuid())
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id])
+  nomeRazaoSocial String
+  cpfCnpj         String   @unique
+  email           String?
+  telefone        String?
+  whatsapp        String?
+  endereco        String?
+  status          String   @default("PROSPECTO") // PROSPECTO, ATIVO, INATIVO, SUSPENSO
+  categoria       String?
+  observacoes     String?
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  @@index([empresaId])
+  @@index([cpfCnpj])
+  @@index([status])
+}
