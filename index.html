@@ -3,78 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Infinito</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Leve Chopp · Gestão</title>
+    <meta name="description" content="Sistema de gestão completo da cervejaria Leve Chopp — Belo Horizonte">
+    <link rel="stylesheet" href="app.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header com Pontuação -->
-        <div class="header">
-            <h1>🧠 Quiz Infinito</h1>
-            <div class="score-box">
-                <div class="stat">
-                    <span class="label">Pontos</span>
-                    <span class="value" id="score">0</span>
-                </div>
-                <div class="stat">
-                    <span class="label">🔥 Streak</span>
-                    <span class="value" id="streak">0</span>
-                </div>
-                <div class="stat">
-                    <span class="label">❓ Pergunta</span>
-                    <span class="value" id="question-count">1</span>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-logo">🍺</div>
+                <div class="brand-text">
+                    <strong>Leve Chopp</strong>
+                    <span>Belo Horizonte · MG</span>
                 </div>
             </div>
-        </div>
-
-        <!-- Game Area -->
-        <div class="game-area">
-            <div id="quiz-container" class="quiz-container">
-                <!-- Pergunta -->
-                <div class="question-section">
-                    <h2 id="question" class="question">Carregando pergunta...</h2>
-                    <div class="difficulty" id="difficulty">Fácil</div>
-                </div>
-
-                <!-- Opções -->
-                <div class="options">
-                    <button class="option-btn" onclick="selectAnswer(0)">
-                        <span class="option-letter">A</span>
-                        <span class="option-text" id="option-0">Opção 1</span>
-                    </button>
-                    <button class="option-btn" onclick="selectAnswer(1)">
-                        <span class="option-letter">B</span>
-                        <span class="option-text" id="option-1">Opção 2</span>
-                    </button>
-                    <button class="option-btn" onclick="selectAnswer(2)">
-                        <span class="option-letter">C</span>
-                        <span class="option-text" id="option-2">Opção 3</span>
-                    </button>
-                    <button class="option-btn" onclick="selectAnswer(3)">
-                        <span class="option-letter">D</span>
-                        <span class="option-text" id="option-3">Opção 4</span>
-                    </button>
-                </div>
-
-                <!-- Resultado da Resposta -->
-                <div id="result-message" class="result-message" style="display: none;"></div>
-
-                <!-- Botão Próxima -->
-                <button id="next-btn" class="next-btn" onclick="nextQuestion()" style="display: none;">
-                    Próxima Pergunta →
-                </button>
+            <nav class="nav" id="nav">
+                <a href="#/dashboard" data-route="dashboard"><span class="ico">📊</span> Dashboard</a>
+                <a href="#/pdv" data-route="pdv"><span class="ico">🧾</span> Vendas / PDV</a>
+                <a href="#/pedidos" data-route="pedidos"><span class="ico">📦</span> Pedidos</a>
+                <a href="#/produtos" data-route="produtos"><span class="ico">🍻</span> Produtos &amp; Estoque</a>
+                <a href="#/chopeiras" data-route="chopeiras"><span class="ico">❄️</span> Locação Chopeiras</a>
+                <a href="#/clientes" data-route="clientes"><span class="ico">👥</span> Clientes</a>
+                <a href="#/financeiro" data-route="financeiro"><span class="ico">💰</span> Financeiro</a>
+                <a href="#/relatorios" data-route="relatorios"><span class="ico">📈</span> Relatórios</a>
+                <a href="#/config" data-route="config"><span class="ico">⚙️</span> Configurações</a>
+            </nav>
+            <div class="sidebar-foot">
+                <span id="clock"></span>
             </div>
+        </aside>
 
-            <!-- Leaderboard -->
-            <div class="leaderboard">
-                <h3>🏆 Melhores Scores</h3>
-                <ul id="leaderboard-list"></ul>
-                <button class="reset-btn" onclick="resetLeaderboard()">Limpar Histórico</button>
+        <!-- Main -->
+        <main class="main">
+            <header class="topbar">
+                <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+                <h1 id="pageTitle">Dashboard</h1>
+                <div class="topbar-right">
+                    <span class="badge" id="alertBadge" title="Alertas"></span>
+                </div>
+            </header>
+            <section class="content" id="view"><!-- rendered by app.js --></section>
+        </main>
+    </div>
+
+    <!-- Modal genérico -->
+    <div class="modal-overlay" id="modal" aria-hidden="true">
+        <div class="modal">
+            <div class="modal-head">
+                <h2 id="modalTitle">Título</h2>
+                <button class="modal-close" id="modalClose" aria-label="Fechar">✕</button>
             </div>
+            <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
-    <script src="questions.js"></script>
-    <script src="script.js"></script>
+    <!-- Toast -->
+    <div class="toast" id="toast" aria-live="polite"></div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
